@@ -28,7 +28,42 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
+  app.get("/:filteredimage", async (req, res) => {
 
+    let image_url = req.query.image_url;
+    if ( !image_url ) {    
+      return res.status(400)
+        .send(`image_url is required`);    
+    }
+
+    const validateImageQuery = async (imageUrl:string) => { //from https://stackoverflow.com/questions/30970068/js-regex-url-validation/30970319 (best answer)
+      var resX = imageUrl.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+      if(resX == null)
+          return false;
+      else
+          return true;
+    }
+    
+    try {
+        var promiseB = filterImageFromURL(req.query.image_url).then(function (result) {
+          res.sendFile(result, function (err) {
+            if (err) {
+              res.send("Error during sending of the file").end();              
+            }
+            else {
+              var fileArray = [];
+              fileArray.push(result);
+              deleteLocalFiles(fileArray);
+            }
+          });
+        }).catch(error => {
+            console.log(error)
+            res.send(error)
+    })
+    } catch (error) {
+        res.send(res.status(400).json({ error: error.toString() }));             
+    }
+  });
   //! END @TODO1
   
   // Root Endpoint
